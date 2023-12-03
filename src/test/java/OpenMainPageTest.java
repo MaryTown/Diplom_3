@@ -1,65 +1,48 @@
-import Browsers.BrowserDriverSetting;
+import api.user.UserAuth;
 import io.qameta.allure.junit4.DisplayName;
 import io.restassured.response.Response;
-import org.junit.After;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
-import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.support.ui.ExpectedConditions;
-import org.openqa.selenium.support.ui.WebDriverWait;
 
-import java.time.Duration;
-
-import static org.hamcrest.Matchers.containsString;
-
-public class OpenMainPageTest {
-
-    WebDriver webDriver;
-    MainPage mainPage;
-    ForgotPasswordPage forgotPasswordPage;
+public class OpenMainPageTest extends BaseTest {
     UserAuth userAuth;
-    private User user;
+    String accessToken;
 
-    private final String name = User.getName();
-    private final String email = User.getEmail();
-    private final String password = User.getPassword();
-    private String accessToken;
-    RegistrationPage registrationPage;
-
-    @Before
-    public void setUp() {
-        webDriver = BrowserDriverSetting.browserDriverSetUp();
-        registrationPage = new RegistrationPage(webDriver);
-        webDriver.get(registrationPage.getUrl());
-        registrationPage.registrateUser(name, email, password);
-        mainPage = new MainPage(webDriver);
+    @Test
+    @DisplayName("Переход по клику на «Конструктор»")
+    public void clickConstructorOnPersonalAccountTest() {
         webDriver.get(mainPage.getUrl());
-        forgotPasswordPage = new ForgotPasswordPage(webDriver);
-        userAuth = new UserAuth();
-        User user = GettingParams.getRandomUser();
+
+        //регистрация и авторизация, чтобы зайти в ЛК
         Response response = userAuth.create(user);
         accessToken = response.path("accessToken");
+        mainPage.clickLoginMainPageButton();
+        loginPage.inputEmail(user.getEmail());
+        loginPage.inputPassword(user.getPassword());
+        loginPage.clickLoginButton();
+
+        //переход по клику на конструктор
+        profilePage.clickConstructorButton();
+
+        Assert.assertEquals("Оформить заказ", webDriver.findElement(mainPage.createOrderMainPageButton()).getText());
     }
 
     @Test
-    @DisplayName("Проверь переход по клику на «Конструктор» и на логотип Stellar Burgers")
-    public void clickLogoAndConstructorOnPersonalAccountTest() {
-        mainPage.clickButtonLogoAndConstructorOnPersonalAccount();
-        new WebDriverWait(webDriver, Duration.ofSeconds(5))
-                .until(ExpectedConditions.visibilityOfElementLocated(mainPage.createOrderMainPageButton));
-        Assert.assertThat(webDriver.findElement(mainPage.createOrderMainPageButton).getText(), containsString("Оформить заказ"));
-    }
+    @DisplayName("Переход по клику на логотип Stellar Burgers")
+    public void clickLogoOnPersonalAccountTest() {
+        webDriver.get(mainPage.getUrl());
 
-    @After
-    public void cleanUp() {
-        if (accessToken != null) {
-            UserAuth.delete(accessToken);
-        }
-    }
+        //регистрация и авторизация, чтобы зайти в ЛК
+        Response response = userAuth.create(user);
+        accessToken = response.path("accessToken");
+        mainPage.clickLoginMainPageButton();
+        loginPage.inputEmail(user.getEmail());
+        loginPage.inputPassword(user.getPassword());
+        loginPage.clickLoginButton();
 
-    @After
-    public void tearDown() {
-        webDriver.quit();
+        //переход по клику на логотип
+        profilePage.clickLogo();
+
+        Assert.assertEquals("Оформить заказ", webDriver.findElement(mainPage.createOrderMainPageButton()).getText());
     }
 }
